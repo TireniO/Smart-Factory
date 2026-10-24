@@ -1,0 +1,41 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint and format (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check"
+      - name: Format
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check --diff"
+
+  files:
+    name: Large files and secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Block files over 5 MB
+        run: |
+          big=$(find . -path ./.git -prune -o -type f -size +5M -print)
+          if [ -n "$big" ]; then
+            echo "::error::These files are over 5 MB. Store them on the shared drive instead:"
+            echo "$big"
+            exit 1
+          fi
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
