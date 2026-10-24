@@ -2,6 +2,7 @@ name: Checks
 
 on:
   pull_request:
+    types: [opened, edited, synchronize, reopened]
   push:
     branches: [main]
 
@@ -39,3 +40,24 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pr-format:
+    name: PR title and linked issue
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title and description
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          ok=true
+          if ! echo "$TITLE" | grep -Eq '^\[(T([1-9]|1[0-5])|PM)\] (feat|fix|data|docs|refactor|chore): .+'; then
+            echo "::error::PR title must look like: [T1] feat: add K2 Plus logger"
+            ok=false
+          fi
+          if ! echo "$BODY" | grep -Eiq '(closes|fixes|resolves) #[0-9]+'; then
+            echo "::error::Add 'Closes #<issue number>' to the PR description"
+            ok=false
+          fi
+          $ok
