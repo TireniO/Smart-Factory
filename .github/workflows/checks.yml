@@ -51,6 +51,7 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}
         run: |
+          TITLE="$(echo "$TITLE" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
           ok=true
           if ! echo "$TITLE" | grep -Eq '^\[(T([1-9]|1[0-5])|PM)\] (feat|fix|data|docs|refactor|chore): .+'; then
             echo "::error::PR title must look like: [T1] feat: add K2 Plus logger"
